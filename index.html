@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japan Salary Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, #c62828, #d32f2f);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.05rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #d32f2f;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        #job-search {
+            padding-right: 2.5rem;
+        }
+
+        .search-wrapper::after {
+            content: "\1F50D";
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+
+        .job-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .job-list.visible {
+            display: block;
+        }
+
+        .job-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+        }
+
+        .job-item:hover {
+            background: #fff3f3;
+        }
+
+        .job-item .title {
+            font-weight: 600;
+        }
+
+        .job-item .category {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .selected-job {
+            background: #fff3f3;
+            border: 2px solid #d32f2f;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-top: 0.5rem;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .selected-job.visible {
+            display: flex;
+        }
+
+        .selected-job .remove {
+            cursor: pointer;
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 1.2rem;
+            padding: 0 0.25rem;
+        }
+
+        button {
+            background: linear-gradient(135deg, #c62828, #d32f2f);
+            color: white;
+            border: none;
+            padding: 0.85rem 2rem;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .results {
+            display: none;
+        }
+
+        .results.visible {
+            display: block;
+        }
+
+        .results h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #c62828;
+        }
+
+        .salary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .salary-box {
+            text-align: center;
+            padding: 1.25rem 0.5rem;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .salary-box.low { border-left: 4px solid #ff9800; }
+        .salary-box.mid { border-left: 4px solid #4caf50; }
+        .salary-box.high { border-left: 4px solid #2196f3; }
+
+        .salary-box .label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+
+        .salary-box .jpy {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .salary-box .converted {
+            font-size: 1rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .rate-note {
+            font-size: 0.85rem;
+            color: #999;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        .disclaimer {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 1rem;
+            line-height: 1.5;
+        }
+
+        .error {
+            color: #c62828;
+            background: #fff3f3;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error.visible { display: block; }
+
+        .loading {
+            text-align: center;
+            padding: 1rem;
+            display: none;
+        }
+
+        .loading.visible { display: block; }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #d32f2f;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 600px) {
+            .salary-grid { grid-template-columns: 1fr; }
+            header h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Japan Salary Calculator</h1>
+    <p>Find Japanese salary ranges for any role, converted to your currency</p>
+</header>
+
+<div class="container">
+    <div class="card">
+        <div class="form-group">
+            <label for="job-search">Job Title</label>
+            <div class="search-wrapper">
+                <input type="text" id="job-search" placeholder="Search for a job title (e.g. CFO, Software Engineer)..." autocomplete="off">
+            </div>
+            <div class="selected-job" id="selected-job">
+                <span id="selected-job-text"></span>
+                <span class="remove" id="clear-job">&times;</span>
+            </div>
+            <div class="job-list" id="job-list"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="currency">Your Currency</label>
+            <select id="currency">
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="CAD">CAD - Canadian Dollar</option>
+                <option value="AUD">AUD - Australian Dollar</option>
+                <option value="SGD">SGD - Singapore Dollar</option>
+                <option value="HKD">HKD - Hong Kong Dollar</option>
+                <option value="CNY">CNY - Chinese Yuan</option>
+                <option value="KRW">KRW - South Korean Won</option>
+                <option value="INR">INR - Indian Rupee</option>
+                <option value="THB">THB - Thai Baht</option>
+                <option value="PHP">PHP - Philippine Peso</option>
+                <option value="MYR">MYR - Malaysian Ringgit</option>
+                <option value="IDR">IDR - Indonesian Rupiah</option>
+                <option value="TWD">TWD - Taiwan Dollar</option>
+                <option value="VND">VND - Vietnamese Dong</option>
+                <option value="BRL">BRL - Brazilian Real</option>
+                <option value="MXN">MXN - Mexican Peso</option>
+                <option value="CHF">CHF - Swiss Franc</option>
+                <option value="SEK">SEK - Swedish Krona</option>
+                <option value="NZD">NZD - New Zealand Dollar</option>
+            </select>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <button id="calculate" disabled>Calculate Salary</button>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Fetching exchange rates...</p>
+    </div>
+
+    <div class="results" id="results">
+        <div class="card">
+            <h2 id="results-title"></h2>
+            <div class="salary-grid">
+                <div class="salary-box low">
+                    <div class="label">Entry / Low</div>
+                    <div class="jpy" id="jpy-low"></div>
+                    <div class="converted" id="conv-low"></div>
+                </div>
+                <div class="salary-box mid">
+                    <div class="label">Median</div>
+                    <div class="jpy" id="jpy-mid"></div>
+                    <div class="converted" id="conv-mid"></div>
+                </div>
+                <div class="salary-box high">
+                    <div class="label">Senior / High</div>
+                    <div class="jpy" id="jpy-high"></div>
+                    <div class="converted" id="conv-high"></div>
+                </div>
+            </div>
+            <div class="rate-note" id="rate-note"></div>
+            <div class="disclaimer">
+                Salary data reflects typical ranges for Japan-based positions. Actual compensation varies by company size, location, industry, and experience. Exchange rates are fetched live and may fluctuate.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Japan salary data (annual, in JPY) - based on typical market ranges
+const SALARY_DATA = [
+    // C-Suite / Executive
+    { title: "CEO (Chief Executive Officer)", category: "Executive", low: 20000000, mid: 35000000, high: 80000000 },
+    { title: "CFO (Chief Financial Officer)", category: "Executive", low: 15000000, mid: 28000000, high: 60000000 },
+    { title: "COO (Chief Operating Officer)", category: "Executive", low: 15000000, mid: 27000000, high: 55000000 },
+    { title: "CTO (Chief Technology Officer)", category: "Executive", low: 15000000, mid: 28000000, high: 60000000 },
+    { title: "CMO (Chief Marketing Officer)", category: "Executive", low: 14000000, mid: 25000000, high: 50000000 },
+    { title: "CHRO (Chief Human Resources Officer)", category: "Executive", low: 13000000, mid: 22000000, high: 45000000 },
+    { title: "CIO (Chief Information Officer)", category: "Executive", low: 14000000, mid: 25000000, high: 50000000 },
+    { title: "VP / Vice President", category: "Executive", low: 12000000, mid: 20000000, high: 40000000 },
+    { title: "Managing Director", category: "Executive", low: 15000000, mid: 25000000, high: 50000000 },
+    { title: "Board Director", category: "Executive", low: 12000000, mid: 20000000, high: 45000000 },
+
+    // Finance & Accounting
+    { title: "Finance Manager", category: "Finance", low: 7000000, mid: 10000000, high: 15000000 },
+    { title: "Financial Analyst", category: "Finance", low: 4500000, mid: 7000000, high: 10000000 },
+    { title: "Accountant", category: "Finance", low: 3500000, mid: 5500000, high: 8000000 },
+    { title: "Senior Accountant", category: "Finance", low: 5000000, mid: 7500000, high: 10000000 },
+    { title: "Controller", category: "Finance", low: 8000000, mid: 12000000, high: 18000000 },
+    { title: "Tax Manager", category: "Finance", low: 7000000, mid: 10000000, high: 15000000 },
+    { title: "Internal Auditor", category: "Finance", low: 5000000, mid: 7500000, high: 11000000 },
+    { title: "Treasury Analyst", category: "Finance", low: 5000000, mid: 7500000, high: 10000000 },
+    { title: "Investment Banker", category: "Finance", low: 8000000, mid: 15000000, high: 30000000 },
+    { title: "Fund Manager", category: "Finance", low: 8000000, mid: 15000000, high: 35000000 },
+
+    // Technology / Engineering
+    { title: "Software Engineer", category: "Technology", low: 4000000, mid: 7000000, high: 12000000 },
+    { title: "Senior Software Engineer", category: "Technology", low: 7000000, mid: 10000000, high: 16000000 },
+    { title: "Staff Software Engineer", category: "Technology", low: 10000000, mid: 15000000, high: 22000000 },
+    { title: "Principal Engineer", category: "Technology", low: 13000000, mid: 18000000, high: 28000000 },
+    { title: "Frontend Developer", category: "Technology", low: 4000000, mid: 6500000, high: 10000000 },
+    { title: "Backend Developer", category: "Technology", low: 4500000, mid: 7000000, high: 11000000 },
+    { title: "Full Stack Developer", category: "Technology", low: 4500000, mid: 7000000, high: 12000000 },
+    { title: "Mobile Developer (iOS/Android)", category: "Technology", low: 4500000, mid: 7000000, high: 12000000 },
+    { title: "DevOps Engineer", category: "Technology", low: 5000000, mid: 8000000, high: 13000000 },
+    { title: "Site Reliability Engineer (SRE)", category: "Technology", low: 6000000, mid: 9000000, high: 15000000 },
+    { title: "Cloud Engineer", category: "Technology", low: 5000000, mid: 8000000, high: 13000000 },
+    { title: "Security Engineer", category: "Technology", low: 5500000, mid: 8500000, high: 14000000 },
+    { title: "QA Engineer", category: "Technology", low: 3500000, mid: 5500000, high: 8500000 },
+    { title: "Engineering Manager", category: "Technology", low: 10000000, mid: 14000000, high: 20000000 },
+    { title: "VP of Engineering", category: "Technology", low: 15000000, mid: 22000000, high: 35000000 },
+    { title: "IT Manager", category: "Technology", low: 6000000, mid: 9000000, high: 14000000 },
+    { title: "IT Support Specialist", category: "Technology", low: 3000000, mid: 4500000, high: 6500000 },
+    { title: "Systems Administrator", category: "Technology", low: 4000000, mid: 6000000, high: 9000000 },
+    { title: "Network Engineer", category: "Technology", low: 4500000, mid: 7000000, high: 10000000 },
+    { title: "Database Administrator", category: "Technology", low: 4500000, mid: 7000000, high: 10000000 },
+
+    // Data & AI
+    { title: "Data Scientist", category: "Data & AI", low: 5000000, mid: 9000000, high: 15000000 },
+    { title: "Data Analyst", category: "Data & AI", low: 4000000, mid: 6000000, high: 9000000 },
+    { title: "Data Engineer", category: "Data & AI", low: 5000000, mid: 8000000, high: 13000000 },
+    { title: "Machine Learning Engineer", category: "Data & AI", low: 6000000, mid: 10000000, high: 18000000 },
+    { title: "AI Research Scientist", category: "Data & AI", low: 8000000, mid: 13000000, high: 25000000 },
+    { title: "Business Intelligence Analyst", category: "Data & AI", low: 4500000, mid: 7000000, high: 10000000 },
+
+    // Product & Design
+    { title: "Product Manager", category: "Product", low: 6000000, mid: 9000000, high: 15000000 },
+    { title: "Senior Product Manager", category: "Product", low: 9000000, mid: 13000000, high: 20000000 },
+    { title: "UX Designer", category: "Product", low: 4000000, mid: 6500000, high: 10000000 },
+    { title: "UI Designer", category: "Product", low: 3500000, mid: 6000000, high: 9000000 },
+    { title: "UX Researcher", category: "Product", low: 4500000, mid: 7000000, high: 10000000 },
+    { title: "Product Designer", category: "Product", low: 4500000, mid: 7000000, high: 11000000 },
+
+    // Marketing & Sales
+    { title: "Marketing Manager", category: "Marketing", low: 5500000, mid: 8000000, high: 12000000 },
+    { title: "Digital Marketing Specialist", category: "Marketing", low: 3500000, mid: 5500000, high: 8000000 },
+    { title: "SEO Specialist", category: "Marketing", low: 3500000, mid: 5000000, high: 7500000 },
+    { title: "Content Marketing Manager", category: "Marketing", low: 4500000, mid: 7000000, high: 10000000 },
+    { title: "Brand Manager", category: "Marketing", low: 5500000, mid: 8000000, high: 12000000 },
+    { title: "Sales Manager", category: "Sales", low: 6000000, mid: 9000000, high: 15000000 },
+    { title: "Account Executive", category: "Sales", low: 4000000, mid: 7000000, high: 12000000 },
+    { title: "Business Development Manager", category: "Sales", low: 6000000, mid: 9000000, high: 14000000 },
+    { title: "Sales Director", category: "Sales", low: 10000000, mid: 15000000, high: 25000000 },
+
+    // Human Resources
+    { title: "HR Manager", category: "Human Resources", low: 5500000, mid: 8000000, high: 12000000 },
+    { title: "HR Business Partner", category: "Human Resources", low: 6000000, mid: 9000000, high: 13000000 },
+    { title: "Recruiter", category: "Human Resources", low: 3500000, mid: 5500000, high: 8000000 },
+    { title: "Compensation & Benefits Manager", category: "Human Resources", low: 6000000, mid: 9000000, high: 13000000 },
+    { title: "Training & Development Manager", category: "Human Resources", low: 5000000, mid: 7500000, high: 11000000 },
+
+    // Operations & Supply Chain
+    { title: "Operations Manager", category: "Operations", low: 5500000, mid: 8000000, high: 12000000 },
+    { title: "Supply Chain Manager", category: "Operations", low: 6000000, mid: 9000000, high: 14000000 },
+    { title: "Logistics Manager", category: "Operations", low: 5000000, mid: 7500000, high: 11000000 },
+    { title: "Procurement Manager", category: "Operations", low: 5500000, mid: 8500000, high: 13000000 },
+    { title: "Project Manager", category: "Operations", low: 5000000, mid: 8000000, high: 12000000 },
+    { title: "Program Manager", category: "Operations", low: 7000000, mid: 10000000, high: 15000000 },
+
+    // Legal & Compliance
+    { title: "Legal Counsel", category: "Legal", low: 7000000, mid: 11000000, high: 18000000 },
+    { title: "General Counsel", category: "Legal", low: 12000000, mid: 20000000, high: 35000000 },
+    { title: "Compliance Manager", category: "Legal", low: 6000000, mid: 9000000, high: 14000000 },
+    { title: "Paralegal", category: "Legal", low: 3500000, mid: 5000000, high: 7000000 },
+    { title: "Patent Attorney", category: "Legal", low: 8000000, mid: 12000000, high: 20000000 },
+
+    // Consulting
+    { title: "Management Consultant", category: "Consulting", low: 5000000, mid: 9000000, high: 18000000 },
+    { title: "Strategy Consultant", category: "Consulting", low: 6000000, mid: 10000000, high: 20000000 },
+    { title: "IT Consultant", category: "Consulting", low: 5000000, mid: 8000000, high: 14000000 },
+    { title: "Partner (Consulting Firm)", category: "Consulting", low: 18000000, mid: 30000000, high: 60000000 },
+
+    // Healthcare & Pharma
+    { title: "Doctor / Physician", category: "Healthcare", low: 10000000, mid: 15000000, high: 25000000 },
+    { title: "Nurse", category: "Healthcare", low: 3500000, mid: 5000000, high: 6500000 },
+    { title: "Pharmacist", category: "Healthcare", low: 4500000, mid: 6000000, high: 8000000 },
+    { title: "Medical Director", category: "Healthcare", low: 15000000, mid: 22000000, high: 35000000 },
+    { title: "Clinical Research Associate", category: "Healthcare", low: 4500000, mid: 7000000, high: 10000000 },
+
+    // Education
+    { title: "University Professor", category: "Education", low: 5000000, mid: 8000000, high: 12000000 },
+    { title: "English Teacher (ALT/Eikaiwa)", category: "Education", low: 2500000, mid: 3500000, high: 5000000 },
+    { title: "School Principal", category: "Education", low: 7000000, mid: 9000000, high: 12000000 },
+
+    // Creative / Media
+    { title: "Graphic Designer", category: "Creative", low: 3000000, mid: 4500000, high: 7000000 },
+    { title: "Art Director", category: "Creative", low: 5000000, mid: 8000000, high: 12000000 },
+    { title: "Video Producer", category: "Creative", low: 4000000, mid: 6000000, high: 9000000 },
+    { title: "Copywriter", category: "Creative", low: 3000000, mid: 5000000, high: 8000000 },
+
+    // Real Estate & Construction
+    { title: "Real Estate Agent", category: "Real Estate", low: 3500000, mid: 6000000, high: 10000000 },
+    { title: "Construction Manager", category: "Construction", low: 5000000, mid: 7500000, high: 11000000 },
+    { title: "Architect", category: "Construction", low: 4000000, mid: 6500000, high: 10000000 },
+
+    // General / Admin
+    { title: "Administrative Assistant", category: "Admin", low: 2800000, mid: 3800000, high: 5000000 },
+    { title: "Executive Assistant", category: "Admin", low: 4000000, mid: 6000000, high: 9000000 },
+    { title: "Office Manager", category: "Admin", low: 3500000, mid: 5500000, high: 8000000 },
+    { title: "Customer Service Representative", category: "Admin", low: 2800000, mid: 3800000, high: 5000000 },
+    { title: "Receptionist", category: "Admin", low: 2500000, mid: 3200000, high: 4200000 },
+];
+
+// DOM elements
+const jobSearch = document.getElementById('job-search');
+const jobList = document.getElementById('job-list');
+const selectedJobEl = document.getElementById('selected-job');
+const selectedJobText = document.getElementById('selected-job-text');
+const clearJobBtn = document.getElementById('clear-job');
+const currencySelect = document.getElementById('currency');
+const calculateBtn = document.getElementById('calculate');
+const loadingEl = document.getElementById('loading');
+const resultsEl = document.getElementById('results');
+const errorEl = document.getElementById('error');
+
+let selectedJob = null;
+
+// Format numbers
+function formatJPY(amount) {
+    return '\u00a5' + amount.toLocaleString('en-US');
+}
+
+function formatCurrency(amount, currency) {
+    try {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+    } catch {
+        return currency + ' ' + amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+}
+
+// Search/filter jobs
+function filterJobs(query) {
+    if (!query.trim()) return SALARY_DATA;
+    const q = query.toLowerCase();
+    return SALARY_DATA.filter(j =>
+        j.title.toLowerCase().includes(q) || j.category.toLowerCase().includes(q)
+    );
+}
+
+function renderJobList(jobs) {
+    jobList.innerHTML = '';
+    if (jobs.length === 0) {
+        jobList.innerHTML = '<div class="job-item"><span class="title">No matching roles found</span></div>';
+    }
+    jobs.forEach(job => {
+        const div = document.createElement('div');
+        div.className = 'job-item';
+        div.innerHTML = `<span class="title">${job.title}</span><br><span class="category">${job.category}</span>`;
+        div.addEventListener('click', () => selectJob(job));
+        jobList.appendChild(div);
+    });
+    jobList.classList.add('visible');
+}
+
+function selectJob(job) {
+    selectedJob = job;
+    selectedJobText.textContent = `${job.title} (${job.category})`;
+    selectedJobEl.classList.add('visible');
+    jobList.classList.remove('visible');
+    jobSearch.value = '';
+    jobSearch.style.display = 'none';
+    calculateBtn.disabled = false;
+}
+
+function clearJob() {
+    selectedJob = null;
+    selectedJobEl.classList.remove('visible');
+    jobSearch.style.display = '';
+    jobSearch.value = '';
+    calculateBtn.disabled = true;
+    resultsEl.classList.remove('visible');
+}
+
+// Event listeners
+jobSearch.addEventListener('input', () => {
+    const filtered = filterJobs(jobSearch.value);
+    renderJobList(filtered);
+});
+
+jobSearch.addEventListener('focus', () => {
+    const filtered = filterJobs(jobSearch.value);
+    renderJobList(filtered);
+});
+
+document.addEventListener('click', (e) => {
+    if (!jobList.contains(e.target) && e.target !== jobSearch) {
+        jobList.classList.remove('visible');
+    }
+});
+
+clearJobBtn.addEventListener('click', clearJob);
+
+calculateBtn.addEventListener('click', async () => {
+    if (!selectedJob) return;
+
+    errorEl.classList.remove('visible');
+    resultsEl.classList.remove('visible');
+    loadingEl.classList.add('visible');
+    calculateBtn.disabled = true;
+
+    const currency = currencySelect.value;
+
+    try {
+        // Fetch exchange rate from open API (JPY to target currency)
+        const resp = await fetch(`https://api.exchangerate-api.com/v4/latest/JPY`);
+        if (!resp.ok) throw new Error('Failed to fetch exchange rates');
+        const data = await resp.json();
+
+        const rate = data.rates[currency];
+        if (!rate) throw new Error(`Exchange rate not available for ${currency}`);
+
+        // Calculate conversions
+        const convLow = selectedJob.low * rate;
+        const convMid = selectedJob.mid * rate;
+        const convHigh = selectedJob.high * rate;
+
+        // Render results
+        document.getElementById('results-title').textContent = `${selectedJob.title} in Japan`;
+        document.getElementById('jpy-low').textContent = formatJPY(selectedJob.low);
+        document.getElementById('jpy-mid').textContent = formatJPY(selectedJob.mid);
+        document.getElementById('jpy-high').textContent = formatJPY(selectedJob.high);
+        document.getElementById('conv-low').textContent = formatCurrency(convLow, currency);
+        document.getElementById('conv-mid').textContent = formatCurrency(convMid, currency);
+        document.getElementById('conv-high').textContent = formatCurrency(convHigh, currency);
+        document.getElementById('rate-note').textContent = `Exchange rate: 1 JPY = ${rate.toFixed(6)} ${currency} (as of ${new Date().toLocaleDateString()})`;
+
+        resultsEl.classList.add('visible');
+    } catch (err) {
+        errorEl.textContent = `Error: ${err.message}. Please try again.`;
+        errorEl.classList.add('visible');
+    } finally {
+        loadingEl.classList.remove('visible');
+        calculateBtn.disabled = false;
+    }
+});
+</script>
+
+</body>
+</html>
